@@ -264,6 +264,7 @@ let cellSize;
 let pos,dir,cam;
 let distToCam;
 let pixelWidth;
+let canvas;
 
 const wallHeight = 128;
 const maxDist = 50;
@@ -272,7 +273,10 @@ let drawMode = true;
 
 
 function setup() {
-  canvas = createCanvas(640,640).canvas;
+  const p5Canvas = createCanvas(640,640);
+  p5Canvas.parent('p5-holder');
+  canvas = p5Canvas.canvas; //the html canvas object
+
   cellSize = width / gridSize;
   pixelWidth = width / hRes;
   
