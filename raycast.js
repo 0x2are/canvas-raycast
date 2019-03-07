@@ -239,16 +239,18 @@ function drawFirstPerson(ints) {
   fill(20);
   rect(0, height/2, width, height/2);
 
+  const col = [152, 77, 238];
+
   for (let i = 0; i < hRes; ++i) {
     const ang = ints[i].ang - playerAng;
     const distToWall = ints[i].mag * cos(ang); 
     const projHeight = (wallHeight / distToWall) * distToCam;
-    const b = maxDist / distToWall * 255;
+    const b = maxDist / distToWall;
     const ceilingBottom = halfWidth - projHeight/2;
     const x = i*pixelWidth;
 
     //wall
-    fill(0,0,b);
+    fill(col[0] * b, col[1] * b, col[2] * b);
     rect(x, ceilingBottom, pixelWidth, projHeight);
   }
 }
@@ -331,7 +333,13 @@ function draw() {
 function control() {
   if (isKeyPressed) {
     const mov = createVector(cos(playerAng), sin(playerAng));
-    mov.mult(moveSpeed);
+
+    if (keyIsDown(SHIFT)) {
+      mov.mult(moveSpeed * 2);
+    }
+    else {
+      mov.mult(moveSpeed);
+    }
     const xMov = mov.x;
     const yMov = mov.y;
     let nextX = pos.x;
@@ -371,7 +379,7 @@ function control() {
 
 
 function keyPressed() {
-  if (keyCode === (' ').charCodeAt(0)) {
+  if (keyCode === CONTROL) {
     drawMode = !drawMode;
 
     if (drawMode) {
