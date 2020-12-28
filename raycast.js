@@ -34,13 +34,13 @@ function gridFull(cx, cy) {
 }
 
 
-//returns true if the cell that the 
+//returns true if the cell that the
 //given world position is in is full
 function worldGridFull(px, py) {
   const cx = floor(px / cellSize);
   const cy = floor(py / cellSize);
   const oob = px < 0 || px >= width || py < 0 || py >= height;
-  
+
   return oob ? true : gridFull(cx, cy);
 }
 
@@ -77,8 +77,8 @@ function drawMiniMap(xOff, yOff, w, h) {
   const pGridWidth = pCellWidth * gridSize;
   const pGridheight = pCellHeight * gridSize;
 
-  stroke(50);
-  strokeWeight(1);
+  stroke(hue, sat, 50);
+  strokeWeight(0.5);
   //horizontal lines
   for (let y = 0; y <= gridSize; ++y) {
     const yVal = yOff + y * pCellHeight;
@@ -88,7 +88,7 @@ function drawMiniMap(xOff, yOff, w, h) {
   //vertical lines
   for (let x = 0; x <= gridSize; ++x) {
     const xVal = xOff + x * pCellWidth;
-    line(xVal, yOff, xVal, yOff + pGridheight);    
+    line(xVal, yOff, xVal, yOff + pGridheight);
   }
 
   //draw walls
@@ -96,20 +96,20 @@ function drawMiniMap(xOff, yOff, w, h) {
     const row = grid[y];
     for (let x = 0; x < gridSize; ++x) {
       const val = row[x];
-      
+
       if (val != 0) {
-        fill("white");
+        fill(hue, sat, 50);
       }
       else {
-        fill("black");
+        fill(hue,sat,5,0.5);
       }
       rect(xOff + x * pCellWidth, yOff + y * pCellHeight, pCellWidth, pCellHeight);
     }
   }
-  
+
   const pXPos = xOff + pos.x / width * pGridWidth;
   const pYPos = yOff + pos.y / height * pGridheight;
-  
+
   //draw player direction indicator
   stroke(255);
   const dir = p5.Vector.fromAngle(playerAng);
@@ -118,7 +118,7 @@ function drawMiniMap(xOff, yOff, w, h) {
   line(pXPos, pYPos, dir.x, dir.y);
 
     //draw player
-  fill("green");
+  fill(hue, sat, 50);
   ellipse(pXPos, pYPos, pCellWidth/2, pCellHeight/2);
 }
 
@@ -139,7 +139,7 @@ function wallAt(x, y) {
   }
 
   if (!ans && hLine) {
-    ans = gridFull(cx, cy - 1);   
+    ans = gridFull(cx, cy - 1);
   }
 
   if (!ans && hLine && vLine) {
@@ -150,7 +150,7 @@ function wallAt(x, y) {
 }
 
 
-//calculate the amount to shift a given variable by 
+//calculate the amount to shift a given variable by
 //to place it on a grid line. Positive is the direction
 //to move in
 function shift(dependant, positive) {
@@ -180,10 +180,10 @@ function rayCast(start,dir) {
     const m = dy/dx;
     const positive = dx > 0;
     const shiftAmt = shift(vx, positive);
-    
+
     vx += shiftAmt;
     vy += m * shiftAmt;
-    
+
     //iterate ray steps
     const xStep = positive ? cellSize : -cellSize;
     const yStep = m * xStep;
@@ -193,15 +193,15 @@ function rayCast(start,dir) {
       vy += yStep;
     }
   }
-  
+
   if (fireHRay) {
     const m = dx/dy;
     const positive = dy > 0;
     const shiftAmt = shift(hy, positive);
-    
+
     hx += m * shiftAmt;
     hy += shiftAmt;
-    
+
     //iterate ray steps
     const yStep = positive ? cellSize : -cellSize;
     const xStep = m * yStep;
@@ -215,7 +215,7 @@ function rayCast(start,dir) {
   const vInt = createVector(vx, vy);
   const hInt = createVector(hx, hy);
   let ans = hInt;
-  
+
   if (fireHRay && fireVRay) {
     //set ans to closest of v or h to the start
     const vMag = p5.Vector.sub(vInt,start).magSq();
@@ -226,9 +226,13 @@ function rayCast(start,dir) {
   else if (fireVRay) {
     ans = vInt;
   }
-  
+
   return ans;
 }
+
+const style = getComputedStyle(document.documentElement);
+const hue = style.getPropertyValue("--accent-hue");
+const sat = parseInt(style.getPropertyValue("--accent-sat"));
 
 
 function drawFirstPerson(ints) {
@@ -243,14 +247,14 @@ function drawFirstPerson(ints) {
 
   for (let i = 0; i < hRes; ++i) {
     const ang = ints[i].ang - playerAng;
-    const distToWall = ints[i].mag * cos(ang); 
+    const distToWall = ints[i].mag * cos(ang);
     const projHeight = (wallHeight / distToWall) * distToCam;
     const b = maxDist / distToWall;
     const ceilingBottom = halfWidth - projHeight/2;
     const x = i*pixelWidth;
 
     //wall
-    fill(col[0] * b, col[1] * b, col[2] * b);
+    fill(hue, sat, min(50,50 * b));
     rect(x, ceilingBottom, pixelWidth, projHeight);
   }
 }
@@ -281,8 +285,9 @@ function setup() {
 
   cellSize = width / gridSize;
   pixelWidth = width / hRes;
-  
+
   pos = createVector(width/2, height/2);
+  colorMode(HSL)
 
   //vectors for angle of 0
   dir = createVector(200,0);
@@ -290,7 +295,6 @@ function setup() {
   distToCam = dir.mag();
 
   initGrid();
-
   document.addEventListener('mousemove', (e) => {
     if (!drawMode) {
       playerAng += e.movementX * sensitivity;
@@ -308,23 +312,23 @@ function draw() {
   else {
     const dirRot = rotVec(dir, playerAng);
     const camRot = rotVec(cam, playerAng);
-    
+
     const ints = [];
     //cast all rays and store the magnitudes
     for (let i = 0; i < hRes; ++i) {
       const frac = (i/(hRes-1) - 0.5) * 2
       const camFrac = p5.Vector.mult(camRot, frac);
       const rayDir = p5.Vector.add(dirRot, camFrac);
-      
+
       const int = p5.Vector.sub(rayCast(pos, rayDir), pos);
       const mag = int.mag();
       const ang = int.heading();
       ints.push({mag, ang});
     }
     drawFirstPerson(ints);
-  
+
     fill(255);
-    drawMiniMap(0,0,150,150);
+    drawMiniMap(0,height-152,150,150);
     control();
   }
 }
@@ -344,16 +348,16 @@ function control() {
     const yMov = mov.y;
     let nextX = pos.x;
     let nextY = pos.y;
-  
+
     if (keyIsDown(87)) { //w
       nextX += xMov;
       nextY += yMov;
     }
     if (keyIsDown(83)) { //s
       nextX -= xMov;
-      nextY -= yMov;  
+      nextY -= yMov;
     }
-  
+
     if (keyIsDown(65)) { //a
       nextX += yMov;
       nextY -= xMov;
@@ -362,19 +366,19 @@ function control() {
       nextX -= yMov;
       nextY += xMov;
     }
-  
+
     const canMoveX = !worldGridFull(nextX, pos.y);
     const canMoveY = !worldGridFull(pos.x, nextY);
-  
+
     if (canMoveX) {
       pos.x = nextX;
     }
-  
+
     if (canMoveY) {
       pos.y = nextY;
     }
   }
-  
+
 }
 
 
@@ -400,7 +404,7 @@ function mousePressed() {
     const cellX = floor(mouseX / cellSize);
     const cellY = floor(mouseY / cellSize);
     const val = gridVal(cellX, cellY);
-    
+
     if (val != undefined) {
       grid[cellY][cellX] = ! grid[cellY][cellX];
     }
